@@ -1,3 +1,5 @@
+# In-Place Algorithm
+
 An **in-place** algorithm operates *directly* on its input and changes it, instead of creating and returning a new object. This is sometimes called **destructive**, since the original input is "destroyed" when it's edited to create the new output.
 
 **Careful: "In-place" does not mean "without creating any additional variables!"** Rather, it means "without creating a new copy of the input." In general, an in-place function will only create additional variables that are $O(1)$ space.

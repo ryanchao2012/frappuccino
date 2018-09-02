@@ -2,6 +2,16 @@
 
 A **linked list** organizes items sequentially, with each item storing a pointer to the next one.
 
+ _          |**Worst Case**
+------------|:-------------
+**space**   |$O(n)$
+**prepend** |$O(1)$
+**append**  |$O(1)$
+**lookup**  |$O(n)$
+**insert**  |$O(n)$
+**delete**  |$O(n)$
+
+
 Picture a linked list like a chain of paperclips linked together. It's quick to add another paperclip to the top or bottom. It's even quick to insert one in the middle—just disconnect the chain at the middle link, add the new paperclip, then reconnect the other half.
 
 An item in a linked list is called a **node**. The first node is called the **head**. The last node is called the **tail**.
