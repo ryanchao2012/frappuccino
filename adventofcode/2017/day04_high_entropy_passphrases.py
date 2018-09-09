@@ -19,7 +19,7 @@ How many passphrases are valid?
 def part01(fpath):
     is_valid = []
     with open(fpath, 'r') as f:
-        for line  in f:
+        for line in f:
             tokens = line.strip().split()
             is_valid.append(len(tokens) == len(set(tokens)))
 
