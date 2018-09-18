@@ -143,6 +143,7 @@ def part02(fpath):
     steps, _ = find_instruction_strange_steps(ls)
     print('- Part02 Answer:', steps)
 
+
 if __name__ == '__main__':
 
     part01('./day05_part01_input.txt')  # 364539

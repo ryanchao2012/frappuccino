@@ -36,3 +36,102 @@ The infinite loop is detected after the fifth block redistribution cycle, and so
 Given the initial block counts in your puzzle input,
 how many redistribution cycles must be completed before a configuration is produced that has been seen before?
 """
+
+import unittest
+from typing import List
+
+import numpy as np
+
+
+class Memory:
+
+    def __init__(self, banks: List[int]):
+        print('Initial:', banks)
+        self.banks = np.asarray(banks)
+        self.num = len(banks)
+        self.cache = {}
+        self.cycles = 0
+        self.cache[tuple(banks)] = self.cycles
+        self.period = 0
+
+    def redistribute(self) -> bool:
+        im = self.banks.argmax()
+        v = self.banks[im]
+        p = v // self.num
+        r = v % self.num
+        self.banks[im] = 0
+        self.banks += p
+        for i in range(r):
+            self.banks[(im + i + 1) % self.num] += 1
+        config = tuple(self.banks)
+        self.cycles += 1
+        print(f'Redistribute ({self.cycles}):', config)
+        if config in self.cache:
+            self.period = self.cycles - self.cache[config]
+            return False
+        else:
+            self.cache[config] = self.cycles
+            return True
+
+
+class Part01Test(unittest.TestCase):
+    def test_memory(self):
+        mem = Memory([0, 2, 7, 0])
+        while mem.redistribute():
+            pass
+        self.assertEqual(mem.cycles, 5)
+
+
+def part01(ls: List[int]):
+
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(Part01Test))
+    runner = unittest.TextTestRunner()
+    print(runner.run(suite))
+
+    mem = Memory(ls)
+    while mem.redistribute():
+        pass
+
+    print('- Part01 Answer:', mem.cycles)
+
+
+"""
+--- Part Two ---
+Out of curiosity, the debugger would also like to know the size of the loop:
+starting from a state that has already been seen,
+how many block redistribution cycles must be performed before that same state is seen again?
+
+In the example above, 2 4 1 2 is seen again after four cycles,
+and so the answer in that example would be 4.
+
+How many cycles are in the infinite loop that arises from the configuration in your puzzle input?
+"""
+
+
+class Part02Test(unittest.TestCase):
+    def test_memory(self):
+        mem = Memory([0, 2, 7, 0])
+        while mem.redistribute():
+            pass
+        self.assertEqual(mem.period, 4)
+
+
+def part02(ls: List[int]):
+
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(Part01Test))
+    runner = unittest.TextTestRunner()
+    print(runner.run(suite))
+
+    mem = Memory(ls)
+    while mem.redistribute():
+        pass
+
+    print('- Part02 Answer:', mem.period)
+
+
+if __name__ == '__main__':
+    inputs = [int(v) for v in '5	1	10	0	1	7	13	14	3	12	8	10	7	12	0	6'.split()]
+    part01(inputs)  # 5042
+    part02(inputs)  # 1086
