@@ -51,3 +51,217 @@ However, you should instead use the standard list size of 256 (with values 0 to 
 and the sequence of lengths in your puzzle input. Once this process is complete,
 what is the result of multiplying the first two numbers in the list?
 """
+
+import unittest
+from functools import reduce
+from typing import List
+
+
+class KnotHash:
+
+    __slots__ = ('_list', '_skip', '_size', '_prob')
+
+    def __init__(self, size: int = 256, init_prob: int = 0, init_skip: int = 0):
+        self._list = list(range(size))
+        self._skip = 0
+        self._size = size
+        self._prob = init_prob
+
+    @property
+    def content(self) -> List[int]:
+        return self._list
+
+    @property
+    def rounds(self) -> int:
+        return self._skip
+
+    @property
+    def prob(self) -> int:
+        return self._prob
+
+    @property
+    def skip(self) -> int:
+        return self._skip
+
+    @property
+    def size(self) -> int:
+        return self._size
+
+    def evolve(self, seed: int, debug: bool = False):
+
+        if seed > self.size:
+            raise ValueError(f'Input exceeds list size: {self.size}')
+
+        rev = self.prob + seed - 1
+        for i in range(seed // 2):
+            self._swap((i + self.prob) % self.size,
+                       (rev - i + self.size) % self.size)
+
+        if debug:
+            print('seed:', seed)
+            print('prob:', self.prob, (self.prob + self.skip + seed) % self.size)
+            print('skip:', self.skip, self.skip + 1)
+            print('content:', self.content)
+
+        self._prob = (self.prob + self.skip + seed) % self.size
+        self._skip += 1
+
+    def _swap(self, pos1: int, pos2: int):
+        """Swap values in the two chosen positions."""
+        if pos1 == pos2:
+            return
+        reg = self.content[pos1]
+        self._list[pos1] = self._list[pos2]
+        self._list[pos2] = reg
+
+
+class Part01Test(unittest.TestCase):
+
+    def test_hash(self):
+
+        knot = KnotHash(5)
+        inputs = [3, 4, 1, 5]
+        expects = [
+            [2, 1, 0, 3, 4],
+            [4, 3, 0, 1, 2],
+            [4, 3, 0, 1, 2],
+            [3, 4, 2, 1, 0]
+        ]
+
+        for i, exp in zip(inputs, expects):
+            knot.evolve(i, debug=True)
+            self.assertEqual(knot.content, exp)
+
+
+def part01(literal: str):
+
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(Part01Test))
+    runner = unittest.TextTestRunner()
+    print(runner.run(suite))
+
+    inputs = [int(i) for i in literal.split(',')]
+
+    knot = KnotHash()
+
+    for v in inputs:
+        knot.evolve(v)
+    print('- Part01 Answer:', knot.content[0] * knot.content[1])
+
+
+"""
+--- Part Two ---
+The logic you've constructed forms a single round of the Knot Hash algorithm;
+running the full thing requires many of these rounds. Some input and output processing is also required.
+
+First, from now on, your input should be taken not as a list of numbers, but as a string of bytes instead.
+Unless otherwise specified, convert characters to bytes using their ASCII codes.
+This will allow you to handle arbitrary ASCII strings, and it also ensures that your input lengths are never larger than 255.
+For example, if you are given 1,2,3, you should convert it to the ASCII codes for each character: 49,44,50,44,51.
+
+Once you have determined the sequence of lengths to use,
+add the following lengths to the end of the sequence: 17, 31, 73, 47, 23.
+For example, if you are given 1,2,3, your final sequence of lengths should be 49,44,50,44,51,17,31,73,47,23
+(the ASCII codes from the input string combined with the standard length suffix values).
+
+Second, instead of merely running one round like you did above, run a total of 64 rounds,
+using the same length sequence in each round. The current position and skip size should be preserved between rounds.
+For example, if the previous example was your first round,
+you would start your second round with the same length sequence (3, 4, 1, 5, 17, 31, 73, 47, 23,
+now assuming they came from ASCII codes and include the suffix),
+but start with the previous round's current position (4) and skip size (4).
+
+Once the rounds are complete, you will be left with the numbers from 0 to 255 in some order,
+called the sparse hash. Your next task is to reduce these to a list of only 16 numbers called the dense hash.
+To do this, use numeric bitwise XOR to combine each consecutive block of 16 numbers in the sparse hash
+(there are 16 such blocks in a list of 256 numbers).
+So, the first element in the dense hash is the first sixteen elements of the sparse hash XOR'd together,
+the second element in the dense hash is the second sixteen elements of the sparse hash XOR'd together, etc.
+
+For example, if the first sixteen elements of your sparse hash are as shown below,
+and the XOR operator is ^, you would calculate the first output number like this:
+
+65 ^ 27 ^ 9 ^ 1 ^ 4 ^ 3 ^ 40 ^ 50 ^ 91 ^ 7 ^ 6 ^ 0 ^ 2 ^ 5 ^ 68 ^ 22 = 64
+Perform this operation on each of the sixteen blocks of sixteen numbers in your sparse hash
+to determine the sixteen numbers in your dense hash.
+
+Finally, the standard way to represent a Knot Hash is as a single hexadecimal string;
+the final output is the dense hash in hexadecimal notation.
+Because each number in your dense hash will be between 0 and 255 (inclusive),
+always represent each number as two hexadecimal digits (including a leading zero as necessary).
+So, if your first three numbers are 64, 7, 255, they correspond to the hexadecimal numbers 40, 07, ff,
+and so the first six characters of the hash would be 4007ff.
+Because every Knot Hash is sixteen such numbers, the hexadecimal representation is always 32 hexadecimal digits (0-f) long.
+
+Here are some example hashes:
+
+The empty string becomes a2582a3a0e66e6e86e3812dcb672a272.
+AoC 2017 becomes 33efeb34ea91902bb2f59c9920caa6cd.
+1,2,3 becomes 3efbe78a8d82f29979031a4aa0b16a9d.
+1,2,4 becomes 63960835bcdc130f0b66d7ff4f6a5a8e.
+Treating your puzzle input as a string of ASCII characters, what is the Knot Hash of your puzzle input?
+Ignore any leading or trailing whitespace you might encounter.
+"""
+
+
+def dense_hash(src: List[int], block_size: int = 16):
+
+    if len(src) % block_size != 0:
+        raise ValueError
+
+    hashed = [reduce(lambda x, y: x ^ y, src[i * block_size: (i + 1) * block_size])
+              for i in range(len(src) // block_size)]
+
+    return ''.join([hex(h)[-2:].replace('x', '0') for h in hashed])
+
+
+def encode(inputs: str, rounds: int = 64, salts: List[int] = [17, 31, 73, 47, 23]):
+    knot = KnotHash(size=256)
+
+    for _ in range(rounds):
+
+        for ch in inputs:
+            knot.evolve(ord(ch))
+
+        for s in salts:
+            knot.evolve(s)
+
+    return dense_hash(knot.content)
+
+
+class Part02Test(unittest.TestCase):
+
+    def test_hashing(self):
+        inputs = [
+            '',
+            'AoC 2017',
+            '1,2,3',
+            '1,2,4'
+        ]
+
+        expects = [
+            'a2582a3a0e66e6e86e3812dcb672a272',
+            '33efeb34ea91902bb2f59c9920caa6cd',
+            '3efbe78a8d82f29979031a4aa0b16a9d',
+            '63960835bcdc130f0b66d7ff4f6a5a8e'
+        ]
+
+        for v, exp in zip(inputs, expects):
+            self.assertEqual(encode(v), exp)
+
+
+def part02(literal: str):
+
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(Part02Test))
+    runner = unittest.TextTestRunner()
+    print(runner.run(suite))
+
+    print('- Part02 Answer:', encode(literal))
+
+
+if __name__ == '__main__':
+    part01('187,254,0,81,169,219,1,190,19,102,255,56,46,32,2,216')  # 1980
+
+    # 899124dac21012ebc32e2f4d11eaec55
+    part02('187,254,0,81,169,219,1,190,19,102,255,56,46,32,2,216')
