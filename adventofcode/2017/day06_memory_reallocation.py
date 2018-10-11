@@ -46,7 +46,6 @@ import numpy as np
 class Memory:
 
     def __init__(self, banks: List[int]):
-        print('Initial:', banks)
         self.banks = np.asarray(banks)
         self.num = len(banks)
         self.cache = {}
@@ -54,7 +53,7 @@ class Memory:
         self.cache[tuple(banks)] = self.cycles
         self.period = 0
 
-    def redistribute(self) -> bool:
+    def redistribute(self, debug: bool = False) -> bool:
         im = self.banks.argmax()
         v = self.banks[im]
         p = v // self.num
@@ -65,7 +64,8 @@ class Memory:
             self.banks[(im + i + 1) % self.num] += 1
         config = tuple(self.banks)
         self.cycles += 1
-        print(f'Redistribute ({self.cycles}):', config)
+        if debug:
+            print(f'Redistribute ({self.cycles}):', config)
         if config in self.cache:
             self.period = self.cycles - self.cache[config]
             return False
