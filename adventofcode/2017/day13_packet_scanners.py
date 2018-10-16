@@ -182,9 +182,8 @@ In the example above, the trip severity is 0*3 + 6*4 = 24.
 Given the details of the firewall you've recorded, if you leave immediately, what is the severity of your whole trip?
 """
 
-
 import unittest
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 
 def layer_parser(line: str) -> Tuple[int, int]:
@@ -202,7 +201,7 @@ def sum_severity(layers: List[Tuple[int, int]]):
         if depth == 0:
             continue
 
-        if depth == 1 or picosecond % (2 * depth -2) == 0:
+        if depth == 1 or picosecond % (2 * depth - 2) == 0:
             severity += (picosecond * depth)
 
     return severity
@@ -210,14 +209,12 @@ def sum_severity(layers: List[Tuple[int, int]]):
 
 class Part01Test(unittest.TestCase):
 
-    literals = (
-        """
+    literals = ("""
         0: 3
         1: 2
         4: 4
         6: 4
-        """
-    )
+        """)
 
     def test_parser(self):
         expect = [(0, 3), (1, 2), (4, 4), (6, 4)]
@@ -372,6 +369,123 @@ the fewest number of picoseconds you would need to delay to get through safely i
 What is the fewest number of picoseconds that you need to delay the packet to pass through the firewall without being caught?
 """
 
+
+def get_caught_sequence_args(layer: int, depth: int) -> Tuple[int, int]:
+    """Get the caught sequence according the given `layer` and `depth`.
+
+    The caught points from a given layer form a `arithmetic sequence`(https://en.wikipedia.org/wiki/Arithmetic_progression),
+    general form: An = A0 + n * d
+    in which, the common difference, d, is the period of the harmonic motion of the scanner,
+    i.e., period = d = depth * 2 - 2, and
+    the first term, A0, is larger than 0.
+
+    Return A0 and d.
+    """
+
+    d = depth * 2 - 2  # depth must larger than 1
+    first = (1 + (layer // d)) * d - layer
+
+    return d, first
+
+
+def get_arith_seq(difference: int, first_term: int):
+    def inner(idx: int):
+        return first_term + idx * difference
+
+    return inner
+
+
+def find_min_escape_delay(layers: Tuple[int, int], max_iteration=10):
+    """Find the minimum delay to escape.
+
+    Get caught sequence of each layer,
+    then iterate the process:
+    1. get the n-th term from all sequences,
+    2. sort them, return the first non-successive number.
+    """
+
+    arith_sequences = []
+    curr_max = 0
+
+    for layer, depth in layers:
+        d, first = get_caught_sequence_args(layer, depth)
+        func = get_arith_seq(d, first)  # noqa
+        curr = func(0)
+        if curr > curr_max:
+            curr_max = curr
+        arith_sequences.append(dict(seq=func, idx=1, current=curr))
+
+    idx = 0
+    next_max = curr_max
+    while max_iteration > idx:
+        #  print('----')
+        terms = []
+        for arith in arith_sequences:
+            while arith['current'] <= curr_max:
+                terms.append(arith['current'])
+                arith['current'] = arith['seq'](arith['idx'])
+                arith['idx'] += 1
+
+                if arith['current'] > next_max:
+                    next_max = arith['current']
+
+        sorted_terms = sorted(set(terms))
+
+        # print(f'sorted_terms: {sorted_terms}')
+        for i, j in zip(sorted_terms[:-1], sorted_terms[1:]):
+            if j - i > 1:
+                return i + 1
+
+        # print(f'curr_max: {curr_max}')
+        curr_max = next_max
+        idx += 1
+
+    raise AssertionError()
+
+
+class Part02Test(unittest.TestCase):
+
+    literals = ("""
+        0: 3
+        1: 2
+        4: 4
+        6: 4
+        """)
+
+    def test_arith_seq(self):
+        expect = [(4, 4), (2, 1), (6, 2), (6, 6)]
+
+        ariths = []
+        for line in self.literals.strip().split('\n'):
+            ariths.append(get_caught_sequence_args(*layer_parser(line)))
+
+        self.assertEqual(ariths, expect)
+
+    def test_escape(self):
+        layers = []
+        for line in self.literals.strip().split('\n'):
+            layers.append(layer_parser(line))
+
+        expect = 10
+
+        self.assertEqual(find_min_escape_delay(layers), expect)
+
+
+def part02(fpath: str):
+
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(Part02Test))
+    runner = unittest.TextTestRunner()
+
+    print(runner.run(suite))
+
+    with open(fpath, 'r') as f:
+        layers = [layer_parser(line) for line in f.read().strip().split('\n')]
+
+    print('- Part02 Answer:', find_min_escape_delay(layers, 1000000))
+
+
 if __name__ == '__main__':
 
-    part01('day13_input.txt')
+    part01('day13_input.txt')  # 1300
+    part02('day13_input.txt')  # 3870382
