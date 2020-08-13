@@ -78,7 +78,7 @@ def contain_two_or_three(sent: str) -> Tuple[int, int]:
     return (int(2 in counts), int(3 in counts))
 
 
-def calc_checksum(it: Iterator[str]) -> int:
+def calc_checksum(it: Iterable[str]) -> int:
 
     return operator.mul(*reduce(lambda x, y: (x[0] + y[0], x[1] + y[1]),
                                 (contain_two_or_three(e) for e in it), (0, 0)))
@@ -128,7 +128,7 @@ def sum_differences(sent1: str, sent2: str) -> int:
 
 
 def find_correct_pair(
-        it: Iterator[Tuple[str, str]]) -> Optional[Tuple[str, str]]:
+        it: Iterable[Tuple[str, str]]) -> Optional[Tuple[str, str]]:
 
     for sent1, sent2 in it:
         if sum_differences(sent1, sent2) == 1:

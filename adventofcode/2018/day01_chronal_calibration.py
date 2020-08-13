@@ -100,7 +100,7 @@ What is the first frequency your device reaches twice?
 """
 
 
-def find_repeated(it: Iterator[int], initial=0) -> Optional[int]:
+def find_repeated(it: Iterable[int], initial=0) -> Optional[int]:
     seen: Set = set()
     summed = initial
     seen.add(summed)

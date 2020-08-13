@@ -57,7 +57,7 @@ import numpy as np
 from unittest import TestCase as TC
 from misc import run_testsuite
 from typing import *  # noqa
-from attr import attrs, attrib
+from attr import attrs
 
 
 @attrs(slots=True, auto_attribs=True)
@@ -79,7 +79,7 @@ def literal_parser(lit: str) -> Claim:
         claim_id=claim_id, height=height, width=width, row=row, col=col)
 
 
-def sum_overlap_squares(claims: Iterator[Claim], sidelen: int = 1000) -> int:
+def sum_overlap_squares(claims: Iterable[Claim], sidelen: int = 1000) -> int:
     fabric = np.zeros((sidelen, sidelen))
 
     for claim in claims:
@@ -133,7 +133,7 @@ What is the ID of the only claim that doesn't overlap?
 """
 
 
-def find_intact_claim(claims: Iterator[Claim],
+def find_intact_claim(claims: Iterable[Claim],
                       sidelen: int = 1000) -> Optional[Claim]:
     fabric = np.zeros((sidelen, sidelen))
     cached = []
